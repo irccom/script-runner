@@ -1,0 +1,10 @@
+# Basic privmsg between two clients
+! c1 c2
+c1 NICK dan
+c1 USER d d d d
+    -> 376 422
+c2 NICK alice
+c2 USER a a a a
+    -> 376 422
+c1 PRIVMSG alice :Here is a line!
+    -> c2: privmsg
