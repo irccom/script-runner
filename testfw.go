@@ -9,11 +9,23 @@ import (
 	"strings"
 
 	"github.com/goshuirc/irc-go/ircmsg"
+	colorable "github.com/mattn/go-colorable"
 
 	docopt "github.com/docopt/docopt-go"
 	"github.com/irccom/test-framework/lib"
+	"github.com/mgutz/ansi"
 	"golang.org/x/text/cases"
 )
+
+// client colour, server colour
+var ansiColorSchemes = [][]string{
+	{"red+b", "red"},
+	{"cyan+b", "cyan"},
+	{"green+b", "green"},
+	{"magenta+b", "magenta"},
+	{"blue+b", "blue"},
+	{"yellow+b", "yellow"},
+}
 
 func main() {
 	usage := `testfw.
@@ -27,6 +39,7 @@ Usage:
 Options:
 	--tls               Connect using TLS.
 	--tls-noverify      Don't verify the provided TLS certificates.
+	--no-colours        Disable coloured output.
 	-h --help           Show this screen.
 	--version           Show version.`
 
@@ -53,8 +66,7 @@ Options:
 
 	if arguments["run"].(bool) {
 		address := arguments["<address>"].(string)
-
-		fmt.Println("Running test", scriptFilename, "on server", address)
+		useColours := !arguments["--no-colours"].(bool)
 
 		// read script
 		scriptBytes, err := ioutil.ReadFile(scriptFilename) // just pass the file name
@@ -66,6 +78,28 @@ Options:
 		script, err := ReadScript(scriptString)
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		// assign output colours to clients
+		clientColours := map[string][]string{}
+		colourableStdout := colorable.NewColorableStdout()
+
+		if useColours {
+			// ensure colours are applied consistently
+			var clientIDsSorted []string
+			for id := range script.Clients {
+				clientIDsSorted = append(clientIDsSorted, id)
+			}
+			sort.Strings(clientIDsSorted)
+
+			var colSchemeI int
+			for _, id := range clientIDsSorted {
+				clientColours[id] = ansiColorSchemes[colSchemeI]
+				colSchemeI++
+				if len(ansiColorSchemes) <= colSchemeI {
+					colSchemeI = 0
+				}
+			}
 		}
 
 		// get additional connection config
@@ -94,7 +128,13 @@ Options:
 			// send line
 			if action.LineToSend != "" {
 				socket.SendLine(action.LineToSend)
-				fmt.Println(action.Client, " ->", action.LineToSend)
+				line := fmt.Sprintf("%s  -> %s", action.Client, action.LineToSend)
+				if useColours {
+					line = ansi.Color(line, clientColours[action.Client][0])
+					fmt.Fprintln(colourableStdout, line)
+				} else {
+					fmt.Println(line)
+				}
 			}
 
 			// wait for response
@@ -118,7 +158,13 @@ Options:
 						continue
 					}
 
-					fmt.Println(action.Client, "<- ", lineString)
+					out := fmt.Sprintf("%s <-  %s", action.Client, lineString)
+					if useColours {
+						out = ansi.Color(out, clientColours[action.Client][1])
+						fmt.Fprintln(colourableStdout, out)
+					} else {
+						fmt.Println(out)
+					}
 
 					// found an action we're waiting for
 					if action.WaitAfterFor[verb] {
