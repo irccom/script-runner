@@ -28,3 +28,12 @@ For example:
 Between each line, a `PING/PONG` may be used to confirm timings (along with the `->` lines) and are automagically responded to and ignored. Because of this, this framework can't be used to test the `PING` or `PONG` commands/messages.
 
 The tool outputs the traffic received by each client, delineated nicely.
+
+
+## Assumptions
+This tool assumes:
+
+- No other clients are connected to the server.
+- Any spam-protection, filtering, or reconnection throttling has been disabled.
+
+If these assumptions are not true, the bundled scripts may fail and break in surprising ways.
