@@ -1,3 +1,5 @@
+// 2019 Daniel Oaks <daniel@danieloaks.net>
+// released under the MIT license
 package lib
 
 import (

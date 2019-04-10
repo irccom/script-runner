@@ -1,3 +1,5 @@
+// 2019 Daniel Oaks <daniel@danieloaks.net>
+// released under the MIT license
 package main
 
 import (
@@ -14,7 +16,6 @@ import (
 	docopt "github.com/docopt/docopt-go"
 	"github.com/irccom/test-framework/lib"
 	"github.com/mgutz/ansi"
-	"golang.org/x/text/cases"
 )
 
 // client colour, server colour
@@ -32,6 +33,7 @@ func main() {
 
 Usage:
 	testfw run [options] <address> <script-filename>
+	testfw run-multi [options] <settings-filename> <script-filename>
 	testfw print <script-filename>
 	testfw -h | --help
 	testfw --version
@@ -55,7 +57,7 @@ Options:
 		}
 		scriptString := string(scriptBytes)
 
-		script, err := ReadScript(scriptString)
+		script, err := lib.ReadScript(scriptString)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -75,7 +77,7 @@ Options:
 		}
 		scriptString := string(scriptBytes)
 
-		script, err := ReadScript(scriptString)
+		script, err := lib.ReadScript(scriptString)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -180,204 +182,171 @@ Options:
 			socket.Disconnect()
 		}
 	}
-}
 
-type ScriptAction struct {
-	// client this action applies to
-	Client string
-	// line that this client should send
-	LineToSend string
-	// list of messages to wait for after sending the given line (if one is given)
-	WaitAfterFor map[string]bool
-}
-
-type Script struct {
-	Clients map[string]bool
-	Actions []ScriptAction
-}
-
-func (s *Script) String() string {
-	var t string
-
-	// client list
-	var clientIDs []string
-	for id := range s.Clients {
-		clientIDs = append(clientIDs, id)
-	}
-	sort.Strings(clientIDs)
-
-	t += fmt.Sprintf("Clients: %s\n", strings.Join(clientIDs, ", "))
-
-	// actions
-	for _, action := range s.Actions {
-		if action.LineToSend != "" {
-			t += fmt.Sprintf("%s will send: %s\n", action.Client, action.LineToSend)
+	if arguments["run-multi"].(bool) {
+		// read script
+		scriptBytes, err := ioutil.ReadFile(scriptFilename) // just pass the file name
+		if err != nil {
+			log.Fatal(err)
 		}
-		if 0 < len(action.WaitAfterFor) {
-			var verbs []string
-			for verb := range action.WaitAfterFor {
-				verbs = append(verbs, verb)
-			}
-			sort.Strings(verbs)
-			t += fmt.Sprintf("  %s will wait for: %s\n", action.Client, strings.Join(verbs, " "))
-		}
-	}
+		scriptString := string(scriptBytes)
 
-	return t
-}
-
-func NewScriptAction() ScriptAction {
-	var sa ScriptAction
-	sa.WaitAfterFor = make(map[string]bool)
-	return sa
-}
-
-func ReadScript(t string) (*Script, error) {
-	var s Script
-	s.Clients = make(map[string]bool)
-
-	lineNumber := 0
-	for _, line := range strings.Split(t, "\n") {
-		lineNumber++
-
-		// remove junk at start of lines, we don't care about indentation
-		line = strings.TrimLeft(line, " \t")
-
-		// skip empty lines
-		if len(line) < 1 {
-			continue
+		script, err := lib.ReadScript(scriptString)
+		if err != nil {
+			log.Fatal(err)
 		}
 
-		// skip comment lines
-		if strings.HasPrefix(line, "#") {
-			continue
+		// load config
+		config, err := lib.LoadConfigFromFile(arguments["<settings-filename>"].(string))
+		if err != nil {
+			log.Fatalf("Could not read config: %s", err.Error())
 		}
 
-		// handle client definitions
-		if strings.HasPrefix(line, "! ") {
-			line = strings.TrimPrefix(line, "! ")
+		// test out each server in order
+		var serverIDsSorted []string
+		for id := range config.Servers {
+			serverIDsSorted = append(serverIDsSorted, id)
+		}
+		sort.Strings(serverIDsSorted)
 
-			ids := strings.Fields(line)
-			if len(ids) < 1 {
-				return nil, fmt.Errorf("No client IDs defined with [!] on line %d", lineNumber)
+		// make ScriptResults store
+		scriptResults := make(map[string]*lib.ScriptResults)
+
+		for _, id := range serverIDsSorted {
+			info := config.Servers[id]
+			fmt.Print("- ", info.DisplayName, " ...")
+
+			// make script results
+			sr := lib.NewScriptResults()
+
+			// get additional connection config
+			var tlsConfig *tls.Config
+			if info.TLSSkipVerify {
+				tlsConfig = &tls.Config{
+					InsecureSkipVerify: true,
+				}
 			}
 
-			for _, id := range ids {
-				id = cases.Fold().String(id)
-
-				exists := s.Clients[id]
-				if exists {
-					return nil, fmt.Errorf("Client ID [%s] is redefined on line %d", id, lineNumber)
+			// make clients and connect 'em to the server
+			sockets := make(map[string]*lib.Socket)
+			for id := range script.Clients {
+				socket, err := lib.ConnectSocket(info.Address, info.UseTLS, tlsConfig)
+				if err != nil {
+					log.Fatal("Could not connect client:", err.Error())
 				}
-
-				if strings.HasPrefix(id, "!") || strings.HasPrefix(id, "#") || strings.HasPrefix(id, "-") {
-					return nil, fmt.Errorf("Client ID [%s] starts with a disallowed character", id)
-				}
-
-				if strings.ContainsAny(id, ":") {
-					return nil, fmt.Errorf("Client ID [%s] contains a disallowed character", id)
-				}
-
-				// for safety, because we fold it
-				if strings.ContainsAny(id, " \t") {
-					return nil, fmt.Errorf("Client ID [%s] cannot contain whitespace", id)
-				}
-
-				s.Clients[id] = true
-				// fmt.Println("New client", id, "defined")
+				sockets[id] = socket
 			}
 
-			continue
-		}
+			// run through actions
+			for actionI, action := range script.Actions {
+				socket := sockets[action.Client]
 
-		if strings.HasPrefix(line, "!") {
-			return nil, fmt.Errorf("Malformed client definition line on line %d, must start with '! ' (including the space) [%s]", lineNumber, line)
-		}
+				// send line
+				if action.LineToSend != "" {
+					socket.SendLine(action.LineToSend)
+					// line := fmt.Sprintf("%s  -> %s", action.Client, action.LineToSend)
+					// fmt.Println(line)
+					srl := lib.ScriptResultLine{
+						Type:    lib.ResultActionSync,
+						Client:  action.Client,
+						RawLine: action.LineToSend,
+					}
+					sr.Lines = append(sr.Lines, srl)
+				}
 
-		// handle sync lines
-		if strings.HasPrefix(line, "-> ") {
-			if len(s.Actions) < 1 {
-				return nil, fmt.Errorf("Sync line on line %d has no actions to sync against", lineNumber)
-			}
+				// wait for response
+				if 0 < len(action.WaitAfterFor) {
+					for {
+						lineString, err := socket.GetLine()
+						if err != nil {
+							log.Fatal(fmt.Sprintf("Could not get line from server on action %d (%s):", actionI, action.Client), err.Error())
+						}
 
-			originalLine := line
-			line = strings.TrimSpace(strings.TrimPrefix(line, "-> "))
+						line, err := ircmsg.ParseLine(lineString)
+						if err != nil {
+							log.Fatal(fmt.Sprintf("Got malformed line from server on action %d (%s): [%s]", actionI, action.Client, lineString), err.Error())
+						}
 
-			var clientID string
+						verb := strings.ToLower(line.Command)
 
-			if strings.Contains(line, ":") {
-				foldedLine := cases.Fold().String(line)
-				for id := range s.Clients {
-					if strings.HasPrefix(foldedLine, id+":") {
-						clientID = id
-						break
+						// auto-respond to pings... in a dodgy, hacky way :<
+						if verb == "ping" {
+							socket.SendLine(fmt.Sprintf("PONG :%s", line.Params[0]))
+							continue
+						}
+
+						// out := fmt.Sprintf("%s <-  %s", action.Client, lineString)
+						// fmt.Println(out)
+						srl := lib.ScriptResultLine{
+							Type:    lib.ResultIRCMessage,
+							Client:  action.Client,
+							RawLine: lineString,
+						}
+						sr.Lines = append(sr.Lines, srl)
+
+						// found an action we're waiting for
+						if action.WaitAfterFor[verb] {
+							break
+						}
 					}
 				}
+			}
 
-				splitLine := strings.SplitN(line, ":", 2)
-				line = splitLine[1]
-			} else {
-				lastAction := s.Actions[len(s.Actions)-1]
-				// tl;dr you can't do this:
-				//
-				// c1 JOIN #channel
-				//     -> c2: 141
-				//     -> 134
-				if lastAction.LineToSend != "" {
-					clientID = lastAction.Client
+			// disconnect
+			for _, socket := range sockets {
+				socket.SendLine("QUIT")
+				socket.Disconnect()
+			}
+
+			// store results
+			scriptResults[id] = sr
+
+			// print done line
+			fmt.Println("OK!")
+		}
+
+		// create result file
+		var output string
+
+		for _, id := range serverIDsSorted {
+			info := config.Servers[id]
+			sr := scriptResults[id]
+
+			output += fmt.Sprintf("== %s ==\n", info.DisplayName)
+
+			var actionIndex int
+			for _, srl := range sr.Lines {
+				switch srl.Type {
+				case lib.ResultIRCMessage:
+					output += srl.Client
+					output += "  -> "
+					output += strings.TrimSuffix(srl.RawLine, "\r\n")
+					output += "\n"
+				case lib.ResultActionSync:
+					thisAction := script.Actions[actionIndex]
+					if thisAction.LineToSend != "" {
+						output += "---\n"
+						output += thisAction.Client
+						output += " <-  "
+						output += strings.TrimSuffix(thisAction.LineToSend, "\r\n")
+						output += "\n"
+					}
+					actionIndex++
 				}
 			}
-			if clientID == "" {
-				return nil, fmt.Errorf("Could not find matching client for sync line %d: [%s]", lineNumber, originalLine)
-			}
 
-			verbs := strings.Fields(line)
-			newAction := NewScriptAction()
-			newAction.Client = clientID
-			for _, verb := range verbs {
-				verb = strings.ToLower(verb)
-				newAction.WaitAfterFor[verb] = true
-			}
-
-			s.Actions = append(s.Actions, newAction)
-			continue
+			output += "\n\n"
 		}
 
-		if strings.HasPrefix(line, "-") {
-			return nil, fmt.Errorf("Malformed sync line on line %d, must start with '-> ' [%s]", lineNumber, line)
+		// output all results as a HTML file
+		tmpfile, err := ioutil.TempFile("", "irc-test-framework.*.html")
+		if err != nil {
+			log.Fatal(err)
 		}
 
-		// handle action lines
-		var actionLine bool
-		for id := range s.Clients {
-			if strings.HasPrefix(line, id+" ") {
-				splitLine := strings.SplitN(line, " ", 2)
-				newAction := NewScriptAction()
-				newAction.Client = id
-				newAction.LineToSend = splitLine[1]
-				s.Actions = append(s.Actions, newAction)
-				actionLine = true
+		tmpfile.WriteString(output)
+		tmpfile.Close()
 
-			} else if strings.HasPrefix(line, id+"\t") {
-				splitLine := strings.SplitN(line, "\t", 2)
-				newAction := NewScriptAction()
-				newAction.Client = id
-				newAction.LineToSend = splitLine[1]
-				s.Actions = append(s.Actions, newAction)
-				actionLine = true
-			}
-		}
-		if actionLine {
-			continue
-		}
-
-		// fail on all other lines lol
-		return nil, fmt.Errorf("Could not understand line %d: [%s]", lineNumber, line)
+		fmt.Println("\nResults are in:", tmpfile.Name())
 	}
-
-	if len(s.Clients) == 0 {
-		return nil, fmt.Errorf("No clients defined in the script")
-	}
-
-	return &s, nil
 }

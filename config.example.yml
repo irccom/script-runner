@@ -1,0 +1,40 @@
+# this example settings file runs across all the servers in this repo:
+# https://github.com/irccom/test-servers
+#
+# it assumes they have all been brought up with `docker-compose up`
+
+# controls how info is output
+
+# lists the servers to run on
+servers:
+  ircd-irc2:
+    address: "localhost:4440"
+
+  unreal4:
+    name: Unreal4
+    address: "localhost:4441"
+
+  ircd-hybrid:
+    address: "localhost:4442"
+
+  ircu2:
+    address: "localhost:4443"
+
+  bahamut:
+    name: Bahamut
+    address: "localhost:4444"
+
+  ngircd:
+    name: ngIRCd
+    address: "localhost:4445"
+
+  ircd-ratbox:
+    address: "localhost:4446"
+
+  charybdis:
+    name: Charybdis
+    address: "localhost:4447"
+
+  inspircd:
+    name: InspIRCd
+    address: "localhost:4448"
