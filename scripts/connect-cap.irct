@@ -1,4 +1,5 @@
-# Basic connection script with caps
+#~ Basic Connection with CAP
+#~d Basic connection with capability request
 ! c1
 c1 CAP LS 302
 c1 NICK dan

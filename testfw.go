@@ -10,6 +10,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/pkg/browser"
+
 	"github.com/goshuirc/irc-go/ircmsg"
 	colorable "github.com/mattn/go-colorable"
 
@@ -42,6 +44,7 @@ Options:
 	--tls               Connect using TLS.
 	--tls-noverify      Don't verify the provided TLS certificates.
 	--no-colours        Disable coloured output.
+	--browser           Open the result HTML in the browser.
 	-h --help           Show this screen.
 	--version           Show version.`
 
@@ -306,37 +309,39 @@ Options:
 		}
 
 		// create result file
-		var output string
+		output := lib.HTMLFromResults(script, config.Servers, scriptResults)
 
-		for _, id := range serverIDsSorted {
-			info := config.Servers[id]
-			sr := scriptResults[id]
+		// var output string
 
-			output += fmt.Sprintf("== %s ==\n", info.DisplayName)
+		// for _, id := range serverIDsSorted {
+		// 	info := config.Servers[id]
+		// 	sr := scriptResults[id]
 
-			var actionIndex int
-			for _, srl := range sr.Lines {
-				switch srl.Type {
-				case lib.ResultIRCMessage:
-					output += srl.Client
-					output += "  -> "
-					output += strings.TrimSuffix(srl.RawLine, "\r\n")
-					output += "\n"
-				case lib.ResultActionSync:
-					thisAction := script.Actions[actionIndex]
-					if thisAction.LineToSend != "" {
-						output += "---\n"
-						output += thisAction.Client
-						output += " <-  "
-						output += strings.TrimSuffix(thisAction.LineToSend, "\r\n")
-						output += "\n"
-					}
-					actionIndex++
-				}
-			}
+		// 	output += fmt.Sprintf("== %s ==\n", info.DisplayName)
 
-			output += "\n\n"
-		}
+		// 	var actionIndex int
+		// 	for _, srl := range sr.Lines {
+		// 		switch srl.Type {
+		// 		case lib.ResultIRCMessage:
+		// 			output += srl.Client
+		// 			output += "  -> "
+		// 			output += strings.TrimSuffix(srl.RawLine, "\r\n")
+		// 			output += "\n"
+		// 		case lib.ResultActionSync:
+		// 			thisAction := script.Actions[actionIndex]
+		// 			if thisAction.LineToSend != "" {
+		// 				output += "---\n"
+		// 				output += thisAction.Client
+		// 				output += " <-  "
+		// 				output += strings.TrimSuffix(thisAction.LineToSend, "\r\n")
+		// 				output += "\n"
+		// 			}
+		// 			actionIndex++
+		// 		}
+		// 	}
+
+		// 	output += "\n\n"
+		// }
 
 		// output all results as a HTML file
 		tmpfile, err := ioutil.TempFile("", "irc-test-framework.*.html")
@@ -348,5 +353,9 @@ Options:
 		tmpfile.Close()
 
 		fmt.Println("\nResults are in:", tmpfile.Name())
+
+		if arguments["--browser"].(bool) {
+			browser.OpenFile(tmpfile.Name())
+		}
 	}
 }

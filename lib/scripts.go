@@ -48,6 +48,11 @@ type ScriptResultLine struct {
 
 // Script is a series of actions to perform on a server.
 type Script struct {
+	// metadata
+	Name             string
+	ShortDescription string
+
+	// actual data
 	Clients map[string]bool
 	Actions []ScriptAction
 }
@@ -97,6 +102,18 @@ func ReadScript(t string) (*Script, error) {
 
 		// skip empty lines
 		if len(line) < 1 {
+			continue
+		}
+
+		// get metadata lines
+		if strings.HasPrefix(line, "#~ ") {
+			line = strings.TrimPrefix(line, "#~ ")
+			s.Name = strings.TrimSpace(line)
+			continue
+		}
+		if strings.HasPrefix(line, "#~d ") {
+			line = strings.TrimPrefix(line, "#~d ")
+			s.ShortDescription = strings.TrimSpace(line)
 			continue
 		}
 

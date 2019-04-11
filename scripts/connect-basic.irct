@@ -1,4 +1,5 @@
-# Basic connection script
+#~ Basic Connection Test
+#~d Connecting a client and running a WHOIS
 ! c1
 c1 NICK dan
 c1 USER d 0 * :This is dan!
