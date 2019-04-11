@@ -38,8 +38,8 @@ header {
 .content {
 	flex: 1 1 auto;
 	background: #aeae65;
-	height: 100%;
-	width: 100%;
+	height: 100%%;
+	width: 100%%;
 }
 footer {
 	flex: 0 0 content;
