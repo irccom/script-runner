@@ -321,7 +321,7 @@ Options:
 						}
 						sr.Lines = append(sr.Lines, srl)
 						if debug {
-							fmt.Println("  -", action.Client, "in:", verb)
+							fmt.Println("  -", action.Client, "in:", verb, "   ", lineString)
 						}
 
 						// found an action we're waiting for
@@ -346,12 +346,12 @@ Options:
 					for {
 						lineString, err := socket.GetLine()
 						if err != nil {
-							log.Fatal(fmt.Sprintf("Could not get line from server on action %d (%s):", actionI, action.Client), err.Error())
+							log.Fatal(fmt.Sprintf("Could not get new line from server on action %d (%s):", actionI, action.Client), err.Error())
 						}
 
 						line, err := ircmsg.ParseLine(lineString)
 						if err != nil {
-							log.Fatal(fmt.Sprintf("Got malformed line from server on action %d (%s): [%s]", actionI, action.Client, lineString), err.Error())
+							log.Fatal(fmt.Sprintf("Got malformed new line from server on action %d (%s): [%s]", actionI, action.Client, lineString), err.Error())
 						}
 
 						verb := strings.ToLower(line.Command)
@@ -374,7 +374,7 @@ Options:
 						}
 						sr.Lines = append(sr.Lines, srl)
 						if debug {
-							fmt.Println("  -", action.Client, "in:", verb)
+							fmt.Println("  -", action.Client, "in:", verb, "   ", lineString)
 						}
 					}
 				}
