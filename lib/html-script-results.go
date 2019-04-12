@@ -116,6 +116,10 @@ pre {
 pre.c {
 	font-weight: bold;
 }
+pre.err {
+	font-weight: bold;
+	color: #822;
+}
 %[5]s
 
 a {
@@ -230,17 +234,26 @@ function showLogFor(ircd, sanitised) {
 		var raw = logs[i]
 		// console.log(raw['c'], raw['s'], raw['l']);
 
-		var content = raw['c'] + ' '
-		if (raw['s'] == 'c') {
-			content += ' ->'
+		var content = ''
+		if (0 < raw['e'].length) {
+			content = raw['e']
 		} else {
-			content += '<- '
+			content = raw['c'] + ' '
+			if (raw['s'] == 'c') {
+				content += ' ->'
+			} else {
+				content += '<- '
+			}
+			content += ' ' + raw['l']
 		}
-		content += ' ' + raw['l']
 
 		var line = document.createElement("pre")
-		line.classList.add(raw['s'])
 		line.classList.add('c-' + raw['c'])
+		if (0 < raw['e'].length) {
+			line.classList.add('err')
+		} else {
+			line.classList.add(raw['s'])
+		}
 		line.innerText = content
 
 		lines.appendChild(line)
@@ -293,6 +306,7 @@ type lineBlob struct {
 	Client string `json:"c"`
 	SentBy string `json:"s"`
 	Line   string `json:"l"`
+	Error  string `json:"e"`
 }
 
 // HTMLFromResults takes a set of results and outputs an HTML representation of those results.
@@ -367,6 +381,13 @@ func HTMLFromResults(script *Script, serverConfigs map[string]ServerConfig, scri
 					sBlob.Sanitised = append(sBlob.Sanitised, line)
 				}
 				actionIndex++
+			case ResultDisconnected:
+				line := lineBlob{
+					Client: srl.Client,
+					Error:  fmt.Sprintf("%s was disconnected", srl.Client),
+				}
+				sBlob.Raw = append(sBlob.Raw, line)
+				sBlob.Sanitised = append(sBlob.Sanitised, line)
 			}
 		}
 

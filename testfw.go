@@ -5,6 +5,7 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"sort"
@@ -257,6 +258,8 @@ Options:
 			var lastClientSent string
 
 			// run through actions
+			var isDisconnected bool
+
 			for actionI, action := range script.Actions {
 				socket := sockets[action.Client]
 
@@ -293,7 +296,12 @@ Options:
 					for {
 						lineString, err := socket.GetLine()
 						if err != nil {
-							log.Fatal(fmt.Sprintf("Could not get line from server on action %d (%s):", actionI, action.Client), err.Error())
+							if err == io.EOF || err == lib.ErrorDisconnected {
+								isDisconnected = true
+								break
+							} else {
+								log.Fatal(fmt.Sprintf("Could not get line from server on action %d (%s):", actionI, action.Client), err.Error())
+							}
 						}
 
 						line, err := ircmsg.ParseLine(lineString)
@@ -336,7 +344,7 @@ Options:
 
 				// wait for response in new way once registered
 				syncPingString := fmt.Sprintf("sync%d", actionI)
-				if registered[action.Client] {
+				if !isDisconnected && registered[action.Client] {
 					socket.Send(nil, "", "PING", syncPingString)
 
 					if debug {
@@ -346,7 +354,12 @@ Options:
 					for {
 						lineString, err := socket.GetLine()
 						if err != nil {
-							log.Fatal(fmt.Sprintf("Could not get new line from server on action %d (%s):", actionI, action.Client), err.Error())
+							if err == io.EOF || err == lib.ErrorDisconnected {
+								isDisconnected = true
+								break
+							} else {
+								log.Fatal(fmt.Sprintf("Could not get new line from server on action %d (%s):", actionI, action.Client), err.Error())
+							}
 						}
 
 						line, err := ircmsg.ParseLine(lineString)
@@ -377,6 +390,15 @@ Options:
 							fmt.Println("  -", action.Client, "in:", verb, "   ", lineString)
 						}
 					}
+				}
+
+				if isDisconnected {
+					srl := lib.ScriptResultLine{
+						Type:   lib.ResultDisconnected,
+						Client: action.Client,
+					}
+					sr.Lines = append(sr.Lines, srl)
+					break
 				}
 			}
 
