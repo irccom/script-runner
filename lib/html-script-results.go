@@ -93,7 +93,7 @@ footer {
 }
 .tab-content {
 	flex: 1 1 auto;
-	padding: 0 0 0 var(--content-indent);
+	padding: 0;
 }
 .tab-content .section:nth-child(2n) {
 	background: #eee;
@@ -116,6 +116,7 @@ pre {
 pre.c {
 	font-weight: bold;
 }
+%[5]s
 
 a {
 	color: #217de4;
@@ -239,6 +240,7 @@ function showLogFor(ircd, sanitised) {
 
 		var line = document.createElement("pre")
 		line.classList.add(raw['s'])
+		line.classList.add('c-' + raw['c'])
 		line.innerText = content
 
 		lines.appendChild(line)
@@ -267,6 +269,13 @@ showLogFor(server, sanitised);
 </html>`
 
 	tabText = `<a class="tab" href="" data-tab-button data-serverid="%[1]s">%[2]s</a>`
+
+	cssPreTemplate = `pre.c-%[1]s {
+	padding: 2px 0 2px calc(%[2]dch + var(--content-indent));
+	text-indent: -%[2]dch;
+	background: hsl(%[3]d, 90%%, 90%%);
+}
+`
 )
 
 type htmlJSONBlob struct {
@@ -299,6 +308,15 @@ func HTMLFromResults(script *Script, serverConfigs map[string]ServerConfig, scri
 	var tabs string
 	for _, id := range sortedIDs {
 		tabs += fmt.Sprintf(tabText, id, serverConfigs[id].DisplayName)
+	}
+
+	// css
+	var css string
+	hue := 20
+	for id := range script.Clients {
+		// + 5 for ' <-  ' or similar
+		css += fmt.Sprintf(cssPreTemplate, id, len(id)+5, hue)
+		hue += 60
 	}
 
 	// construct JSON blob used by the page
@@ -363,5 +381,5 @@ func HTMLFromResults(script *Script, serverConfigs map[string]ServerConfig, scri
 	}
 
 	// assemble template
-	return fmt.Sprintf(htmlTemplate, script.Name, script.ShortDescription, tabs, blobString)
+	return fmt.Sprintf(htmlTemplate, script.Name, script.ShortDescription, tabs, blobString, css)
 }
