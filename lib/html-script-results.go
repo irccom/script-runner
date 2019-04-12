@@ -112,6 +112,9 @@ footer {
 pre {
 	margin: 0;
 }
+pre.c {
+	font-weight: bold;
+}
 
 a {
 	color: #217de4;
@@ -215,6 +218,7 @@ function showLogFor(ircd) {
 		content += ' ' + raw['l']
 
 		var line = document.createElement("pre")
+		line.classList.add(raw['s'])
 		line.innerText = content
 
 		lines.appendChild(line)

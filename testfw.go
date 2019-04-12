@@ -215,6 +215,9 @@ Options:
 		// make ScriptResults store
 		scriptResults := make(map[string]*lib.ScriptResults)
 
+		// print debug lines to work out exact output issues
+		debug := false
+
 		for _, id := range serverIDsSorted {
 			info := config.Servers[id]
 			fmt.Print("- ", info.DisplayName, " ...")
@@ -231,6 +234,9 @@ Options:
 			}
 
 			// make clients and connect 'em to the server
+			if debug {
+				fmt.Print("\n")
+			}
 			sockets := make(map[string]*lib.Socket)
 			for id := range script.Clients {
 				socket, err := lib.ConnectSocket(info.Address, info.UseTLS, tlsConfig)
@@ -238,6 +244,9 @@ Options:
 					log.Fatal("Could not connect client:", err.Error())
 				}
 				sockets[id] = socket
+				if debug {
+					fmt.Println("Connected client", id)
+				}
 			}
 
 			// run through actions
@@ -245,7 +254,17 @@ Options:
 				socket := sockets[action.Client]
 
 				// send line
-				if action.LineToSend != "" {
+				if action.LineToSend == "" {
+					srl := lib.ScriptResultLine{
+						Type:    lib.ResultActionSync,
+						Client:  action.Client,
+						RawLine: "",
+					}
+					sr.Lines = append(sr.Lines, srl)
+				} else {
+					if debug {
+						fmt.Println(action.Client, action.LineToSend)
+					}
 					socket.SendLine(action.LineToSend)
 					// line := fmt.Sprintf("%s  -> %s", action.Client, action.LineToSend)
 					// fmt.Println(line)
@@ -255,10 +274,16 @@ Options:
 						RawLine: action.LineToSend,
 					}
 					sr.Lines = append(sr.Lines, srl)
+					if debug {
+						fmt.Println(" -> sending")
+					}
 				}
 
 				// wait for response
 				if 0 < len(action.WaitAfterFor) {
+					if debug {
+						fmt.Println(" -", action.Client, "waiting")
+					}
 					for {
 						lineString, err := socket.GetLine()
 						if err != nil {
@@ -286,11 +311,21 @@ Options:
 							RawLine: lineString,
 						}
 						sr.Lines = append(sr.Lines, srl)
+						if debug {
+							fmt.Println("  -", action.Client, "in:", verb)
+						}
 
 						// found an action we're waiting for
 						if action.WaitAfterFor[verb] {
+							if debug {
+								fmt.Println("  -", action.Client, "in break")
+							}
 							break
 						}
+					}
+				} else {
+					if debug {
+						fmt.Println(" -", action.Client, "not waiting")
 					}
 				}
 			}
