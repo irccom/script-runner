@@ -1,13 +1,13 @@
 #~ Basic Private Messaging
 #~d Two clients connecting and messaging each other
-! c1 c2
-c1 NICK dan
-c1 USER d d d d
+! dan alice
+dan NICK dan
+dan USER d d d d
     -> 376 422
-c2 NICK alice
-c2 USER a a a a
+alice NICK alice
+alice USER a a a a
     -> 376 422
-c1 PRIVMSG alice :Here is a line!
-    -> c2: privmsg
-c2 PRIVMSG dan :And here is a reply!
-    -> c1: privmsg
+dan PRIVMSG alice :Here is a line!
+    -> alice: privmsg
+alice PRIVMSG dan :And here is a reply!
+    -> dan: privmsg
