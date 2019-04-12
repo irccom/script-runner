@@ -45,6 +45,7 @@ Options:
 	--tls-noverify      Don't verify the provided TLS certificates.
 	--no-colours        Disable coloured output.
 	--browser           Open the result HTML in the browser.
+	--debug             Output extra debug lines.
 	-h --help           Show this screen.
 	--version           Show version.`
 
@@ -216,7 +217,7 @@ Options:
 		scriptResults := make(map[string]*lib.ScriptResults)
 
 		// print debug lines to work out exact output issues
-		debug := false
+		debug := arguments["--debug"].(bool)
 
 		for _, id := range serverIDsSorted {
 			info := config.Servers[id]
@@ -266,8 +267,6 @@ Options:
 						fmt.Println(action.Client, action.LineToSend)
 					}
 					socket.SendLine(action.LineToSend)
-					// line := fmt.Sprintf("%s  -> %s", action.Client, action.LineToSend)
-					// fmt.Println(line)
 					srl := lib.ScriptResultLine{
 						Type:    lib.ResultActionSync,
 						Client:  action.Client,
@@ -303,8 +302,6 @@ Options:
 							continue
 						}
 
-						// out := fmt.Sprintf("%s <-  %s", action.Client, lineString)
-						// fmt.Println(out)
 						srl := lib.ScriptResultLine{
 							Type:    lib.ResultIRCMessage,
 							Client:  action.Client,
