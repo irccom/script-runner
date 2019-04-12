@@ -1,5 +1,5 @@
 # IRC Foundation IRCd Testing Framework
-This is a framework that helps us perform tests using our [test servers](https://github.com/irccom/test-servers). More than anything, it's intended to simplify sending a consistent burst of traffic to a bunch of different servers, so humans can see the differences in the results and/or collect examples to populate the [IRC Foundation's Developer Docs](https://github.com/irccom/devdocs).
+This is a framework that helps us run scripts using our [test servers](https://github.com/irccom/test-servers). More than anything, it's intended to simplify sending a consistent burst of traffic to a bunch of different servers, so humans can see the differences in the results and/or collect examples to populate the [IRC Foundation's Developer Docs](https://github.com/irccom/devdocs).
 
 It uses a very simple script format to send traffic.
 
@@ -25,7 +25,7 @@ For example:
     c1 PRIVMSG alice :Here is a line!
         -> c2: privmsg
 
-Once connection registeration has completed, clients send `PING` messages to ensure that command responses are tracked correctly. Before registration has completed, the `PING` command cannot be used, so clients use the `->` lines. Because of this, the `->` lines should only be used to wait for things pre-registration (such as `CAP` response lines and the `-> 376 422` above) or after registration to ensure that other clients receive responses from one client's actions (the `-> c2: privmsg` in the above example).
+Once connection registeration has completed, clients send `PING` messages to ensure that command responses are tracked correctly. Before registration has completed, the `PING` command cannot be used, so clients use the `->` lines. Because of this, the `->` lines are only be used to wait for things pre-registration (such as `CAP` response lines and the `-> 376 422` above) or after registration to ensure that other clients receive responses from one client's actions (the `-> c2: privmsg` in the above example).
 
 Because of how we track commands and messages, this framework can't be used to test the `PING` command or `PONG` response.
 
