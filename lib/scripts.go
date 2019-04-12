@@ -101,7 +101,7 @@ func ReadScript(t string) (*Script, error) {
 		line = strings.TrimLeft(line, " \t")
 
 		// skip empty lines
-		if len(line) < 1 {
+		if len(strings.TrimSpace(line)) < 1 {
 			continue
 		}
 
