@@ -1,0 +1,6 @@
+#~ NICK too-long test
+#~d Connecting a client with a really long nickname
+! c1
+c1 NICK long012345678901234567890123456789012345678901234567890123456789001234567890234567890reallylong
+c1 USER d 0 * :This is dan!
+    -> 376 422
