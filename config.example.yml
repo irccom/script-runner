@@ -7,44 +7,11 @@
 
 # lists the servers to run on
 servers:
-  ircd-irc2:
-    address: "localhost:4440"
-    sanitised:
-      "ircd.example.irc.com": "irc.example.com"
-
-  unreal4:
-    name: Unreal4
-    address: "localhost:4441"
-    sanitised:
-      "unreal4.example.irc.com": "irc.example.com"
-
-  ircd-hybrid:
-    address: "localhost:4442"
-    sanitised:
-      "hybrid.example.irc.com": "irc.example.com"
-
-  ircu2:
-    address: "localhost:4443"
-    sanitised:
-      "ircu2.example.irc.com": "irc.example.com"
-      "UnderNet": "ExampleNet"
-
   bahamut:
     name: Bahamut
     address: "localhost:4444"
     sanitised:
       "bahamut.example.irc.com": "irc.example.com"
-
-  ngircd:
-    name: ngIRCd
-    address: "localhost:4445"
-    sanitised:
-      "ngircd.example.irc.com": "irc.example.com"
-
-  ircd-ratbox:
-    address: "localhost:4446"
-    sanitised:
-      "ratbox.example.irc.com": "irc.example.com"
 
   charybdis:
     name: Charybdis
@@ -57,3 +24,36 @@ servers:
     address: "localhost:4448"
     sanitised:
       "inspircd.example.irc.com": "irc.example.com"
+
+  ircd-hybrid:
+    address: "localhost:4442"
+    sanitised:
+      "hybrid.example.irc.com": "irc.example.com"
+
+  ircd-irc2:
+    address: "localhost:4440"
+    sanitised:
+      "ircd.example.irc.com": "irc.example.com"
+
+  ircd-ratbox:
+    address: "localhost:4446"
+    sanitised:
+      "ratbox.example.irc.com": "irc.example.com"
+
+  ircu2:
+    address: "localhost:4443"
+    sanitised:
+      "ircu2.example.irc.com": "irc.example.com"
+      "UnderNet": "ExampleNet"
+
+  ngircd:
+    name: ngIRCd
+    address: "localhost:4445"
+    sanitised:
+      "ngircd.example.irc.com": "irc.example.com"
+
+  unreal4:
+    name: Unreal4
+    address: "localhost:4441"
+    sanitised:
+      "unreal4.example.irc.com": "irc.example.com"
