@@ -250,6 +250,12 @@ Options:
 				}
 			}
 
+			// registered tracks so we can switch to ping tracking (much more accurate)
+			registered := make(map[string]bool)
+
+			// used to let clients properly wait for other clients to receive responses
+			var lastClientSent string
+
 			// run through actions
 			for actionI, action := range script.Actions {
 				socket := sockets[action.Client]
@@ -276,12 +282,13 @@ Options:
 					if debug {
 						fmt.Println(" -> sending")
 					}
+					lastClientSent = action.Client
 				}
 
-				// wait for response
-				if 0 < len(action.WaitAfterFor) {
+				// wait for response in old way
+				if 0 < len(action.WaitAfterFor) && (!registered[action.Client] || lastClientSent != action.Client) {
 					if debug {
-						fmt.Println(" -", action.Client, "waiting")
+						fmt.Println(" -", action.Client, "waiting in old way")
 					}
 					for {
 						lineString, err := socket.GetLine()
@@ -302,6 +309,11 @@ Options:
 							continue
 						}
 
+						// mark registered
+						if verb == "001" {
+							registered[action.Client] = true
+						}
+
 						srl := lib.ScriptResultLine{
 							Type:    lib.ResultIRCMessage,
 							Client:  action.Client,
@@ -320,9 +332,50 @@ Options:
 							break
 						}
 					}
-				} else {
+				}
+
+				// wait for response in new way once registered
+				syncPingString := fmt.Sprintf("sync%d", actionI)
+				if registered[action.Client] {
+					socket.Send(nil, "", "PING", syncPingString)
+
 					if debug {
-						fmt.Println(" -", action.Client, "not waiting")
+						fmt.Println(" -", action.Client, "waiting in new way")
+					}
+
+					for {
+						lineString, err := socket.GetLine()
+						if err != nil {
+							log.Fatal(fmt.Sprintf("Could not get line from server on action %d (%s):", actionI, action.Client), err.Error())
+						}
+
+						line, err := ircmsg.ParseLine(lineString)
+						if err != nil {
+							log.Fatal(fmt.Sprintf("Got malformed line from server on action %d (%s): [%s]", actionI, action.Client, lineString), err.Error())
+						}
+
+						verb := strings.ToLower(line.Command)
+
+						// if response
+						if verb == "pong" && line.Params[1] == syncPingString {
+							break
+						}
+
+						// auto-respond to pings... in a dodgy, hacky way :<
+						if verb == "ping" {
+							socket.SendLine(fmt.Sprintf("PONG :%s", line.Params[0]))
+							continue
+						}
+
+						srl := lib.ScriptResultLine{
+							Type:    lib.ResultIRCMessage,
+							Client:  action.Client,
+							RawLine: lineString,
+						}
+						sr.Lines = append(sr.Lines, srl)
+						if debug {
+							fmt.Println("  -", action.Client, "in:", verb)
+						}
 					}
 				}
 			}

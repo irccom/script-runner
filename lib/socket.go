@@ -9,6 +9,8 @@ import (
 	"net"
 	"strings"
 	"sync"
+
+	"github.com/goshuirc/irc-go/ircmsg"
 )
 
 var (
@@ -88,9 +90,19 @@ func (s *Socket) SendLine(line string) error {
 	s.writeMutex.Lock()
 	defer s.writeMutex.Unlock()
 
-	_, err := s.writer.WriteString(line + "\r\n")
+	_, err := s.writer.WriteString(strings.TrimRight(line, "\r\n") + "\r\n")
 	if err == nil {
 		err = s.writer.Flush()
+	}
+	return err
+}
+
+// Send the given message.
+func (s *Socket) Send(tags map[string]string, prefix string, command string, params ...string) error {
+	msg := ircmsg.MakeMessage(tags, prefix, command, params...)
+	line, err := msg.Line()
+	if err == nil {
+		err = s.SendLine(line)
 	}
 	return err
 }

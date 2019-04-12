@@ -4,7 +4,7 @@
 c1 CAP LS 302
 c1 NICK dan
 c1 USER d 0 * :This is dan!
-    -> cap
+    -> cap 376 422
 c1 CAP REQ multi-prefix
     -> cap
 c1 CAP END

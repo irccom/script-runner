@@ -25,7 +25,9 @@ For example:
     c1 PRIVMSG alice :Here is a line!
         -> c2: privmsg
 
-Between each line, a `PING/PONG` may be used to confirm timings (along with the `->` lines) and are automagically responded to and ignored. Because of this, this framework can't be used to test the `PING` or `PONG` commands/messages.
+Once connection registeration has completed, clients send `PING` messages to ensure that command responses are tracked correctly. Before registration has completed, the `PING` command cannot be used, so clients use the `->` lines. Because of this, the `->` lines should only be used to wait for things pre-registration (such as `CAP` response lines and the `-> 376 422` above) or after registration to ensure that other clients receive responses from one client's actions (the `-> c2: privmsg` in the above example).
+
+Because of how we track commands and messages, this framework can't be used to test the `PING` command or `PONG` response.
 
 The tool outputs the traffic received by each client, delineated nicely.
 
