@@ -311,38 +311,6 @@ Options:
 		// create result file
 		output := lib.HTMLFromResults(script, config.Servers, scriptResults)
 
-		// var output string
-
-		// for _, id := range serverIDsSorted {
-		// 	info := config.Servers[id]
-		// 	sr := scriptResults[id]
-
-		// 	output += fmt.Sprintf("== %s ==\n", info.DisplayName)
-
-		// 	var actionIndex int
-		// 	for _, srl := range sr.Lines {
-		// 		switch srl.Type {
-		// 		case lib.ResultIRCMessage:
-		// 			output += srl.Client
-		// 			output += "  -> "
-		// 			output += strings.TrimSuffix(srl.RawLine, "\r\n")
-		// 			output += "\n"
-		// 		case lib.ResultActionSync:
-		// 			thisAction := script.Actions[actionIndex]
-		// 			if thisAction.LineToSend != "" {
-		// 				output += "---\n"
-		// 				output += thisAction.Client
-		// 				output += " <-  "
-		// 				output += strings.TrimSuffix(thisAction.LineToSend, "\r\n")
-		// 				output += "\n"
-		// 			}
-		// 			actionIndex++
-		// 		}
-		// 	}
-
-		// 	output += "\n\n"
-		// }
-
 		// output all results as a HTML file
 		tmpfile, err := ioutil.TempFile("", "irc-test-framework.*.html")
 		if err != nil {
