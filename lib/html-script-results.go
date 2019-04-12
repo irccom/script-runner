@@ -111,6 +111,7 @@ footer {
 }
 pre {
 	margin: 0;
+	white-space: pre-wrap;
 }
 pre.c {
 	font-weight: bold;
@@ -150,7 +151,7 @@ h1 {
 %[3]s
 		</div>
 		<div class="options">
-			<a class="tab emoji" href="#" title="Toggle Sanitised/Raw">🎨</a>
+			<a id="sanitised-toggle" class="tab emoji" href="#" title="Toggle Sanitised/Raw">🎨</a>
 		</div>
 	</div>
 	<div class="tab-content">
@@ -173,7 +174,10 @@ Content here
 
 <script>
 
-serverInfo = %[4]s;
+var serverInfo = %[4]s;
+
+var server = serverInfo['default-server']
+var sanitised = true
 
 // print default server to console
 console.log('default server is', serverInfo['default-server'])
@@ -184,11 +188,22 @@ for (var i = 0, len = ircdButtons.length; i < len; i++) {
 	ircdButtons[i].addEventListener('click', (event) => {
 		event.preventDefault()
 		// console.log('btn ' + event.currentTarget.dataset.serverid)
-		showLogFor(event.currentTarget.dataset.serverid)
+		server = event.currentTarget.dataset.serverid
+		showLogFor(server, sanitised)
 	})
 }
 
-function showLogFor(ircd) {
+// setup listener for sanitised toggle
+var sanitisedToggle = document.getElementById('sanitised-toggle')
+sanitisedToggle.addEventListener('click', (event) => {
+	event.preventDefault()
+	sanitised = !sanitised
+	showLogFor(server, sanitised)
+	sanitisedToggle.classList.toggle('active')
+})
+sanitisedToggle.classList.add('active')
+
+function showLogFor(ircd, sanitised) {
 	console.log('showing log for', ircd)
 
 	// 'press' button in the gui
@@ -204,7 +219,12 @@ function showLogFor(ircd) {
 	// construct and populate lines content
 	var lines = document.createElement("div");
 	lines.classList.add('lines')
-	var logs = serverInfo["server-logs"][ircd]["raw"]
+	var logs
+	if (sanitised) {
+		logs = serverInfo["server-logs"][ircd]["sanitised"]
+	} else {
+		logs = serverInfo["server-logs"][ircd]["raw"]
+	}
 	for (var i = 0, len = logs.length; i < len; i++) {
 		var raw = logs[i]
 		// console.log(raw['c'], raw['s'], raw['l']);
@@ -239,7 +259,7 @@ function showLogFor(ircd) {
 	}
 }
 
-showLogFor(serverInfo['default-server']);
+showLogFor(server, sanitised);
 
 </script>
 
@@ -297,21 +317,36 @@ func HTMLFromResults(script *Script, serverConfigs map[string]ServerConfig, scri
 		for _, srl := range sr.Lines {
 			switch srl.Type {
 			case ResultIRCMessage:
-				line := lineBlob{
+				// raw line
+				lineRaw := lineBlob{
 					Client: srl.Client,
 					SentBy: "s",
 					Line:   strings.TrimSuffix(srl.RawLine, "\r\n"),
 				}
-				sBlob.Raw = append(sBlob.Raw, line)
+				sBlob.Raw = append(sBlob.Raw, lineRaw)
+
+				// sanitised line
+				sanitisedLine := srl.RawLine
+				for orig, new := range serverConfigs[id].SanitisedReplacements {
+					sanitisedLine = strings.Replace(sanitisedLine, orig, new, -1)
+				}
+				lineSanitised := lineBlob{
+					Client: srl.Client,
+					SentBy: "s",
+					Line:   strings.TrimSuffix(sanitisedLine, "\r\n"),
+				}
+				sBlob.Sanitised = append(sBlob.Sanitised, lineSanitised)
 			case ResultActionSync:
 				thisAction := script.Actions[actionIndex]
 				if thisAction.LineToSend != "" {
+					// sent line always stays the same
 					line := lineBlob{
 						Client: thisAction.Client,
 						SentBy: "c",
 						Line:   strings.TrimSuffix(thisAction.LineToSend, "\r\n"),
 					}
 					sBlob.Raw = append(sBlob.Raw, line)
+					sBlob.Sanitised = append(sBlob.Sanitised, line)
 				}
 				actionIndex++
 			}

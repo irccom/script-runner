@@ -17,6 +17,8 @@ type ServerConfig struct {
 	Address       string
 	UseTLS        bool `yaml:"tls"`
 	TLSSkipVerify bool `yaml:"tls-skip-verify"`
+
+	SanitisedReplacements map[string]string `yaml:"sanitised"`
 }
 
 type Config struct {
