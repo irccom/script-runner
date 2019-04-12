@@ -384,7 +384,7 @@ func HTMLFromResults(script *Script, serverConfigs map[string]ServerConfig, scri
 			case ResultDisconnected:
 				line := lineBlob{
 					Client: srl.Client,
-					Error:  fmt.Sprintf("%s was disconnected", srl.Client),
+					Error:  fmt.Sprintf("%s was disconnected unexpectedly", srl.Client),
 				}
 				sBlob.Raw = append(sBlob.Raw, line)
 				sBlob.Sanitised = append(sBlob.Sanitised, line)
