@@ -312,11 +312,11 @@ func HTMLFromResults(script *Script, serverConfigs map[string]ServerConfig, scri
 
 	// css
 	var css string
-	hue := 20
+	hue := 150
 	for id := range script.Clients {
 		// + 5 for ' <-  ' or similar
 		css += fmt.Sprintf(cssPreTemplate, id, len(id)+5, hue)
-		hue += 50
+		hue += 40
 	}
 
 	// construct JSON blob used by the page
