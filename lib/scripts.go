@@ -219,16 +219,16 @@ func ReadScript(t string) (*Script, error) {
 		// handle action lines
 		var actionLine bool
 		for id := range s.Clients {
-			if strings.HasPrefix(line, id+" ") {
-				splitLine := strings.SplitN(line, " ", 2)
+			if strings.HasPrefix(line, id+": ") {
+				splitLine := strings.SplitN(line, ": ", 2)
 				newAction := NewScriptAction()
 				newAction.Client = id
 				newAction.LineToSend = splitLine[1]
 				s.Actions = append(s.Actions, newAction)
 				actionLine = true
 
-			} else if strings.HasPrefix(line, id+"\t") {
-				splitLine := strings.SplitN(line, "\t", 2)
+			} else if strings.HasPrefix(line, id+":\t") {
+				splitLine := strings.SplitN(line, ":\t", 2)
 				newAction := NewScriptAction()
 				newAction.Client = id
 				newAction.LineToSend = splitLine[1]

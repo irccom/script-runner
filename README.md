@@ -1,9 +1,11 @@
 # IRC Foundation IRCd Script Runner
 This is a framework that runs scripts over IRC servers (particularly our [test servers](https://github.com/irccom/test-servers)). It's an easy way to send a consistent burst of traffic to a bunch of different servers, and the output a file which can be easily looked through to see differences and collect examples to populate the [IRC Foundation's Developer Docs](https://github.com/irccom/devdocs).
 
-It uses a very simple script format to send traffic.
+-----
 
-Specifically:
+It uses a very simple script format ([described in-detail here](SYNTAX.md)) to send traffic, wait for responses, and connect/disconnect clients as needed.
+
+Roughly:
 
     # this defines the client IDs in use
     ! <client_id>{ <client_id>}
@@ -15,15 +17,17 @@ Specifically:
 
 For example:
 
-    ! c1 c2
-    c1 NICK dan
-    c1 USER d d d d
+    ! dan alice
+    dan: NICK dan
+    dan: USER d d d d
         -> 376 422
-    c2 NICK alice
-    c2 USER a a a a
+    alice: NICK alice
+    alice: USER a a a a
         -> 376 422
-    c1 PRIVMSG alice :Here is a line!
-        -> c2: privmsg
+    dan: PRIVMSG alice :Here is a line!
+        -> alice: privmsg
+
+-----
 
 Once connection registeration has completed, clients send `PING` messages to ensure that command responses are tracked correctly. Before registration has completed, the `PING` command cannot be used, so clients use the `->` lines. Because of this, the `->` lines are only be used to wait for things pre-registration (such as `CAP` response lines and the `-> 376 422` above) or after registration to ensure that other clients receive responses from one client's actions (the `-> c2: privmsg` in the above example).
 
