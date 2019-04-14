@@ -1,5 +1,5 @@
-# IRC Foundation IRCd Testing Framework
-This is a framework that helps us run scripts using our [test servers](https://github.com/irccom/test-servers). More than anything, it's intended to simplify sending a consistent burst of traffic to a bunch of different servers, so humans can see the differences in the results and/or collect examples to populate the [IRC Foundation's Developer Docs](https://github.com/irccom/devdocs).
+# IRC Foundation IRCd Script Runner
+This is a framework that runs scripts over IRC servers (particularly our [test servers](https://github.com/irccom/test-servers)). It's an easy way to send a consistent burst of traffic to a bunch of different servers, and the output a file which can be easily looked through to see differences and collect examples to populate the [IRC Foundation's Developer Docs](https://github.com/irccom/devdocs).
 
 It uses a very simple script format to send traffic.
 
