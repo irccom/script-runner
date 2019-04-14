@@ -174,7 +174,7 @@ Content here
 </div>
 
 <footer>
-	<a href="https://github.com/irccom/test-framework">IRC Foundation's test-framework</a>
+	<a href="https://github.com/irccom/script-runner">IRC Foundation's script-runner</a>
 </footer>
 
 <script>

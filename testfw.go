@@ -17,7 +17,7 @@ import (
 	colorable "github.com/mattn/go-colorable"
 
 	docopt "github.com/docopt/docopt-go"
-	"github.com/irccom/test-framework/lib"
+	"github.com/irccom/script-runner/lib"
 	"github.com/mgutz/ansi"
 )
 
