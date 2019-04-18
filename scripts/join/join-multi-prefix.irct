@@ -1,5 +1,5 @@
 #~ Joining a channel with multi-prefix
-#~d Two clients connecting and joining a channel, with multi-prefix
+#~d Three clients connecting and joining a channel, with multi-prefix
 ! dan alice bob
 dan: NICK dan
 dan: USER d d d d

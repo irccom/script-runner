@@ -1,7 +1,7 @@
 #~ Basic Connection Test
 #~d Connecting a client and running a WHOIS
 ! c1
-c1: NICK dan
+c1: NICK dan# as
 c1: USER d 0 * :This is dan!
     -> 376 422
 c1: WHOIS dan

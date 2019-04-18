@@ -1,0 +1,16 @@
+#~ Quitting the network
+#~d Two clients connecting and disconnecting from the network
+! dan alice
+dan: NICK dan
+dan: USER d d d d
+    -> 376 422
+dan: JOIN #chan
+
+alice: NICK alice
+alice: USER a a a a
+    -> 376 422
+alice: JOIN #chan
+    -> dan: join
+
+dan:< QUIT :Because I want to
+    -> alice: quit

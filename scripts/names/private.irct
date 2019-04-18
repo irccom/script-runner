@@ -1,0 +1,25 @@
+#~ Running NAMES on private/secret channels
+#~d Connecting clients and running NAMES on private/secret channels
+! dan alice bob
+dan: NICK dan
+dan: USER d d d d
+    -> 376 422
+dan: JOIN #chans
+dan: MODE #chans +s
+dan: JOIN #chanp
+dan: MODE #chanp +p
+
+bob: NICK bob
+bob: USER b b b b
+    -> 376 422
+bob: JOIN #chans
+bob: JOIN #chanp
+
+alice: NICK alice
+alice: USER a a a a
+    -> 376 422
+alice: NAMES #chans
+alice: NAMES #chanp
+alice: NAMES #chans,#chanp
+alice: NAMES #fake
+alice: NAMES

@@ -1,0 +1,17 @@
+#~ Joining a channel
+#~d Three clients connecting and joining a channel
+! dan alice bob
+dan: NICK dan
+dan: USER d d d d
+    -> 376 422
+dan: JOIN #chan
+
+bob: NICK bob
+bob: USER b b b b
+    -> 376 422
+bob: JOIN #chan
+
+alice: NICK alice
+alice: USER a a a a
+    -> 376 422
+alice: JOIN #chan

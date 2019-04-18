@@ -1,0 +1,22 @@
+#~ Basic NAMES usage
+#~d Running through a few common NAMES examples.
+! dan alice bob
+dan: NICK dan
+dan: USER d d d d
+    -> 376 422
+dan: JOIN #chan
+dan: MODE #chan
+dan: JOIN #dibm
+
+bob: NICK bob
+bob: USER b b b b
+    -> 376 422
+bob: JOIN #chan
+bob: NAMES #chan
+bob: NAMES
+
+alice: NICK alice
+alice: USER a a a a
+    -> 376 422
+alice: NAMES #chan
+alice: NAMES

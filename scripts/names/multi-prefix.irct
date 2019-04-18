@@ -1,0 +1,20 @@
+#~ NAMES plus multi-prefix
+#~d Using NAMES with multi-prefix
+! dan alice bob
+dan: NICK dan
+dan: USER d d d d
+    -> 376 422
+dan: JOIN #chan
+dan: MODE #chan +v dan
+
+bob: NICK bob
+bob: USER b b b b
+    -> 376 422
+bob: JOIN #chan
+
+alice: NICK alice
+alice: USER a a a a
+    -> 376 422
+alice: CAP REQ multi-prefix
+alice: JOIN #chan
+alice: NAMES #chan
