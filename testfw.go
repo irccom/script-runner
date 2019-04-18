@@ -263,6 +263,60 @@ Options:
 			for actionI, action := range script.Actions {
 				socket := sockets[action.Client]
 
+				// plain wait for disconnection
+				if action.LineToSend == "" && action.SpecialActionType == lib.WaitForDisconnect {
+					if debug {
+						fmt.Println(action.Client, "waiting for disconnection")
+					}
+
+					for {
+						lineString, err := socket.GetLine()
+						if err != nil {
+							if err == io.EOF || err == lib.ErrorDisconnected {
+								isDisconnected = true
+								break
+							} else {
+								log.Fatal(fmt.Sprintf("Could not get line from server on action %d (%s):", actionI, action.Client), err.Error())
+							}
+						}
+
+						line, err := ircmsg.ParseLine(lineString)
+						if err != nil {
+							log.Fatal(fmt.Sprintf("Got malformed line from server on action %d (%s): [%s]", actionI, action.Client, lineString), err.Error())
+						}
+
+						verb := strings.ToLower(line.Command)
+
+						// auto-respond to pings... in a dodgy, hacky way :<
+						if verb == "ping" {
+							socket.SendLine(fmt.Sprintf("PONG :%s", line.Params[0]))
+							continue
+						}
+
+						srl := lib.ScriptResultLine{
+							Type:    lib.ResultIRCMessage,
+							Client:  action.Client,
+							RawLine: lineString,
+						}
+						sr.Lines = append(sr.Lines, srl)
+						if debug {
+							fmt.Println("  -", action.Client, "in:", verb, "   ", lineString)
+						}
+					}
+
+					if isDisconnected {
+						srl := lib.ScriptResultLine{
+							Type:   lib.ResultDisconnectedExpected,
+							Client: action.Client,
+						}
+						sr.Lines = append(sr.Lines, srl)
+						isDisconnected = false
+						break
+					}
+
+					continue
+				}
+
 				// send line
 				if action.LineToSend == "" {
 					srl := lib.ScriptResultLine{
@@ -393,12 +447,21 @@ Options:
 				}
 
 				if isDisconnected {
-					srl := lib.ScriptResultLine{
-						Type:   lib.ResultDisconnected,
-						Client: action.Client,
+					if action.SpecialActionType == lib.WaitForDisconnect {
+						srl := lib.ScriptResultLine{
+							Type:   lib.ResultDisconnectedExpected,
+							Client: action.Client,
+						}
+						sr.Lines = append(sr.Lines, srl)
+						isDisconnected = false
+					} else {
+						srl := lib.ScriptResultLine{
+							Type:   lib.ResultDisconnected,
+							Client: action.Client,
+						}
+						sr.Lines = append(sr.Lines, srl)
+						break
 					}
-					sr.Lines = append(sr.Lines, srl)
-					break
 				}
 			}
 

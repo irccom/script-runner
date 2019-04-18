@@ -79,6 +79,20 @@ dan: PRIVMSG alice :This is a message!
 ```
 `dan` sends `alice` a `PRIVMSG`, and `alice` waits to receive the message.
 
+### Disconnecting
+Sometimes, you want a client to disconnect from the network (or want to wait for another client to do so). The `:<`, and `<?` lines let you do this. For example:
+
+```
+dan:< QUIT
+```
+`dan` sends the `QUIT` command, and the `<` on the sending line means that `dan` keeps processing incoming messages until they're disconnected from the network. Once the client has been disconnected, the script moves forward.
+
+```
+dan: KILL george
+    <? george
+```
+`dan` sends the `KILL` command, and the line below means that `george` keeps processing incoming messages until they're disconnected from the network. Once `george` has been disconnected, the script moves forward.
+
 
 ### Future Extensions
 By design, all the 'verbs' require a space after them to work correctly (for example, `!` requires a space after it, `->` does, etc). This is so that these verbs can be extended by adjusting these verbs. For example, to extend client definitions we might introduce a character after the `!` like `!=` or `!?` or something else.

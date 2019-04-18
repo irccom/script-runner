@@ -31,6 +31,8 @@ const (
 	ResultIRCMessage ScriptResultLineType = iota
 	// ResultDisconnected is a client being disconnected from the server.
 	ResultDisconnected = iota
+	// ResultDisconnectedExpected is a client being disconnecting from the server (which we expect).
+	ResultDisconnectedExpected = iota
 	// ResultActionSync is a note that an 'action' has just been processed, used to sync
 	//  results between servers.
 	ResultActionSync = iota
@@ -72,6 +74,10 @@ func (s *Script) String() string {
 
 	// actions
 	for _, action := range s.Actions {
+		if action.LineToSend == "" && action.SpecialActionType == WaitForDisconnect {
+			t += fmt.Sprintf("%s will process incoming messages until they are disconnected\n", action.Client)
+			continue
+		}
 		if action.LineToSend != "" {
 			t += fmt.Sprintf("%s will send: %s\n", action.Client, action.LineToSend)
 		}
@@ -82,6 +88,9 @@ func (s *Script) String() string {
 			}
 			sort.Strings(verbs)
 			t += fmt.Sprintf("  %s will wait for: %s\n", action.Client, strings.Join(verbs, " "))
+		}
+		if action.SpecialActionType == WaitForDisconnect {
+			t += fmt.Sprintf("  %s will wait to be disconnected\n", action.Client)
 		}
 	}
 
@@ -163,6 +172,47 @@ func ReadScript(t string) (*Script, error) {
 			return nil, fmt.Errorf("Malformed client definition line on line %d, must start with '! ' (including the space) [%s]", lineNumber, line)
 		}
 
+		// handle disconnection-wait lines
+		if strings.HasPrefix(line+" ", "<? ") {
+			originalLine := line
+			line = strings.TrimSpace(strings.TrimPrefix(line+" ", "<? "))
+
+			var clientID string
+
+			if 0 < len(line) {
+				foldedLine := cases.Fold().String(line)
+				for id := range s.Clients {
+					if foldedLine == id {
+						clientID = id
+						break
+					}
+				}
+
+				splitLine := strings.SplitN(line, ":", 2)
+				line = splitLine[1]
+			} else {
+				lastAction := s.Actions[len(s.Actions)-1]
+				// tl;dr you can't do this:
+				//
+				// c1 JOIN #channel
+				//     -> c2: 141
+				//     -> 134
+				if lastAction.LineToSend != "" {
+					clientID = lastAction.Client
+				}
+			}
+			if clientID == "" {
+				return nil, fmt.Errorf("Could not find matching client for disconnection-wait line %d: [%s]", lineNumber, originalLine)
+			}
+
+			newAction := NewScriptAction()
+			newAction.Client = clientID
+			newAction.SpecialActionType = WaitForDisconnect
+
+			s.Actions = append(s.Actions, newAction)
+			continue
+		}
+
 		// handle sync lines
 		if strings.HasPrefix(line, "-> ") {
 			if len(s.Actions) < 1 {
@@ -234,6 +284,24 @@ func ReadScript(t string) (*Script, error) {
 				newAction.LineToSend = splitLine[1]
 				s.Actions = append(s.Actions, newAction)
 				actionLine = true
+
+			} else if strings.HasPrefix(line, id+":< ") {
+				splitLine := strings.SplitN(line, ":< ", 2)
+				newAction := NewScriptAction()
+				newAction.Client = id
+				newAction.LineToSend = splitLine[1]
+				newAction.SpecialActionType = WaitForDisconnect
+				s.Actions = append(s.Actions, newAction)
+				actionLine = true
+
+			} else if strings.HasPrefix(line, id+":<\t") {
+				splitLine := strings.SplitN(line, ":<\t", 2)
+				newAction := NewScriptAction()
+				newAction.Client = id
+				newAction.LineToSend = splitLine[1]
+				newAction.SpecialActionType = WaitForDisconnect
+				s.Actions = append(s.Actions, newAction)
+				actionLine = true
 			}
 		}
 		if actionLine {
@@ -251,6 +319,16 @@ func ReadScript(t string) (*Script, error) {
 	return &s, nil
 }
 
+// SpecialActionType is a special type of script action.
+type SpecialActionType int
+
+const (
+	// NoSpecialAction means no special action is performed.
+	NoSpecialAction SpecialActionType = iota
+	// WaitForDisconnect means process messages until we're disconnected.
+	WaitForDisconnect = iota
+)
+
 // ScriptAction is an action to perform on the server, with the given client.
 type ScriptAction struct {
 	// client this action applies to
@@ -259,11 +337,14 @@ type ScriptAction struct {
 	LineToSend string
 	// list of messages to wait for after sending the given line (if one is given)
 	WaitAfterFor map[string]bool
+	// special action type
+	SpecialActionType SpecialActionType
 }
 
 // NewScriptAction returns a new ScriptAction.
 func NewScriptAction() ScriptAction {
 	var sa ScriptAction
 	sa.WaitAfterFor = make(map[string]bool)
+	sa.SpecialActionType = NoSpecialAction
 	return sa
 }
