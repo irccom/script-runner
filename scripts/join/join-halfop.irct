@@ -1,0 +1,27 @@
+#~ Joining a channel and testing halfop abilities
+#~d Three clients connecting and joining a channel, to test out halfops
+! dan alice bob
+dan: NICK dan
+dan: USER d d d d
+    -> 376 422
+dan: JOIN #chan
+
+bob: NICK bob
+bob: USER d d d d
+    -> 376 422
+bob: JOIN #chan
+dan: MODE #chan +h bob
+
+alice: NICK alice
+alice: USER a a a a
+    -> 376 422
+alice: JOIN #chan
+bob: MODE #chan +h alice
+dan: MODE #chan +h alice
+dan: PRIVMSG #chan :modes changed!
+    -> alice: privmsg
+bob: MODE #chan -h alice
+bob: PRIVMSG #chan :modes changed!
+    -> alice: privmsg
+dan: PRIVMSG #chan :modes changed!
+    -> alice: privmsg

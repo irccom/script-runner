@@ -1,0 +1,28 @@
+#~ Going AWAY
+#~d One client joins and tests out AWAY
+! dan alice bob
+dan: NICK dan
+dan: USER d d d d
+    -> 376 422
+dan: AWAY :bye
+dan: AWAY
+dan: JOIN #chan
+
+bob: NICK bob
+bob: USER b b b b
+    -> 376 422
+bob: JOIN #chan
+    -> dan: join
+
+alice: NICK alice
+alice: USER a a a a
+    -> 376 422
+alice: CAP REQ away-notify
+alice: JOIN #chan
+    -> dan: join
+    -> bob: join
+
+dan: AWAY :i am gone
+dan: AWAY
+dan: PRIVMSG alice :done
+    -> alice: privmsg
