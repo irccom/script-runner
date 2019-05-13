@@ -1,0 +1,8 @@
+#~ CAP empty-req test
+#~d Sending a CAP REQ with no actual capabilities
+! c1
+c1: CAP REQ :
+c1: NICK dan
+c1: USER d 0 * :This is dan!
+c1: CAP END
+    -> 376 422
