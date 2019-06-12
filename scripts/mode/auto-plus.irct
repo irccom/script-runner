@@ -1,0 +1,25 @@
+#~ Mode Auto-Plus Test
+#~d Does `MODE target +modes` equal `MODE target modes`?
+! dan alice
+dan: NICK dan
+dan: USER d 0 * :This is dan!
+    -> 376 422
+dan: WHOIS dan
+    -> 318
+dan: JOIN #test
+    -> join
+
+alice: NICK alice
+alice: USER d 0 * :alice here
+    -> 376 422
+alice: WHOIS alice
+    -> 318
+alice: JOIN #test
+    -> join
+    -> dan: join
+
+dan: MODE #test -t
+dan: MODE #test to alice
+
+dan: PRIVMSG #test :synco
+    -> alice: privmsg

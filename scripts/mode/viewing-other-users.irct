@@ -1,0 +1,18 @@
+#~ Viewing other users' modes test
+#~d Can you view other users' modes?
+! dan alice
+alice: NICK alice
+alice: USER d 0 * :alice here
+    -> 376 422
+alice: MODE alice +i
+    -> mode
+
+dan: NICK dan
+dan: USER d 0 * :This is dan!
+    -> 376 422
+dan: MODE alice
+
+dan: OPER daniel password
+
+dan: MODE alice
+dan: WHOIS alice
