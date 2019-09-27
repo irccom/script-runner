@@ -1,0 +1,7 @@
+#~ WHOISing nobody
+#~d Sending a WHOIS for a user not connected to the network
+! c1
+c1: NICK dan
+c1: USER d 0 * :This is dan!
+    -> 376 422
+c1: WHOIS alice

@@ -1,0 +1,23 @@
+#~ Changing  channel topic
+#~d Doing topic changes
+! dan alice
+dan: NICK dan
+dan: USER d d d d
+    -> 376 422
+dan: JOIN #test
+
+alice: NICK alice
+alice: USER a a a a
+    -> 376 422
+alice: JOIN #test
+    -> dan: join
+
+dan: TOPIC #test
+dan: TOPIC #test hi
+    -> alice: topic
+
+alice: PART #test
+    -> part
+    -> dan: part
+
+alice: JOIN #test
